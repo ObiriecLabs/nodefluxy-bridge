@@ -197,16 +197,35 @@ async def _collect_events(prompt_id: str):
 
 # ── Route registration ────────────────────────────────────────────────────────
 
+def _route(method_fn, path, handler):
+    """
+    Registra una route in modo compatibile con tutte le versioni di aiohttp.
+    Alcune versioni di RouteTableDef accettano (path, handler),
+    altre solo lo stile decorator (path)(handler).
+    """
+    try:
+        result = method_fn(path)
+        if callable(result):
+            result(handler)   # stile decorator: method(path)(handler)
+    except TypeError:
+        method_fn(path, handler)  # stile diretto: method(path, handler)
+
+
 def register_routes(routes):
-    # OPTIONS rimosso — su localhost non serve CORS preflight
-    routes.get("/nodefluxy/ping")(handle_ping)
-    routes.get("/nodefluxy/key")(handle_key)
-    routes.post("/nodefluxy/execute")(handle_execute)
-    routes.get("/nodefluxy/status/{prompt_id}")(handle_status)
-    routes.get("/nodefluxy/outputs/{prompt_id}")(handle_outputs)
-    routes.post("/nodefluxy/cancel")(handle_cancel)
-    routes.post("/nodefluxy/upload")(handle_upload)
-    routes.get("/nodefluxy/events/{prompt_id}")(handle_events_ws)
+    # OPTIONS per CORS preflight — non supportato da tutte le versioni, degradazione sicura
+    try:
+        _route(routes.options, "/nodefluxy/{tail:.*}", handle_options)
+    except Exception:
+        pass
+
+    _route(routes.get,  "/nodefluxy/ping",               handle_ping)
+    _route(routes.get,  "/nodefluxy/key",                handle_key)
+    _route(routes.post, "/nodefluxy/execute",            handle_execute)
+    _route(routes.get,  "/nodefluxy/status/{prompt_id}", handle_status)
+    _route(routes.get,  "/nodefluxy/outputs/{prompt_id}",handle_outputs)
+    _route(routes.post, "/nodefluxy/cancel",             handle_cancel)
+    _route(routes.post, "/nodefluxy/upload",             handle_upload)
+    _route(routes.get,  "/nodefluxy/events/{prompt_id}", handle_events_ws)
 
 
 def load_config():
