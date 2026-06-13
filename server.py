@@ -198,15 +198,15 @@ async def _collect_events(prompt_id: str):
 # ── Route registration ────────────────────────────────────────────────────────
 
 def register_routes(routes):
-    routes.options("/nodefluxy/{tail:.*}", handle_options)
-    routes.get("/nodefluxy/ping", handle_ping)
-    routes.get("/nodefluxy/key", handle_key)
-    routes.post("/nodefluxy/execute", handle_execute)
-    routes.get("/nodefluxy/status/{prompt_id}", handle_status)
-    routes.get("/nodefluxy/outputs/{prompt_id}", handle_outputs)
-    routes.post("/nodefluxy/cancel", handle_cancel)
-    routes.post("/nodefluxy/upload", handle_upload)
-    routes.get("/nodefluxy/events/{prompt_id}", handle_events_ws)
+    # OPTIONS rimosso — su localhost non serve CORS preflight
+    routes.get("/nodefluxy/ping")(handle_ping)
+    routes.get("/nodefluxy/key")(handle_key)
+    routes.post("/nodefluxy/execute")(handle_execute)
+    routes.get("/nodefluxy/status/{prompt_id}")(handle_status)
+    routes.get("/nodefluxy/outputs/{prompt_id}")(handle_outputs)
+    routes.post("/nodefluxy/cancel")(handle_cancel)
+    routes.post("/nodefluxy/upload")(handle_upload)
+    routes.get("/nodefluxy/events/{prompt_id}")(handle_events_ws)
 
 
 def load_config():
